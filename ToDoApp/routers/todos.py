@@ -1,23 +1,16 @@
 from typing import Annotated
 from sqlalchemy.orm import Session
-from fastapi import FastAPI, Depends, HTTPException, Path, dependencies
+from fastapi import APIRouter, FastAPI, Depends, HTTPException, Path, dependencies
 import models
-from models import Todos
 from database import engine, SessionLocal
 from pydantic import BaseModel, Field
 
-from routers import auth
 
-app = FastAPI()
-
-models.Base.metadata.create_all(bind=engine)
-
-
-app.include_router(auth.router)
+router = APIRouter()
 
 
 def get_db():
-    db = SessionLocal()
+    db = SessionLocal() 
     try:
         yield db
     finally:
@@ -32,27 +25,25 @@ class TodoRequest(BaseModel):
     complete: bool
 
         
-@app.get("/", status_code=200)
+@router.get("/", status_code=200)
 async def read_all(db:db_dependency):
     return db.query(Todos).all()
 
-@app.get("/todo/{todo_id}", status_code=200)
+@router.get("/todo/{todo_id}", status_code=200)
 async def read_todo(db:db_dependency, todo_id:int = Path(gt=0)):
     todo_model = db.query(Todos).filter(Todos.id == todo_id).first()
     if todo_model is not None:
         return todo_model
     raise HTTPException(status_code=404, detail="todos not found")
 
-
-
-@app.post("/todo", status_code=201)
+@router.post("/todo", status_code=201)
 async def create_todo(db: db_dependency, todo_request: TodoRequest):
     todo_model = Todos(**todo_request.dict())
     db.add(todo_model)
     db.commit()  
     
     
-@app.put("/todo/{todo_id}")
+@router.put("/todo/{todo_id}")
 async def update_todo(db:db_dependency,
                       todo_request: TodoRequest,
                       todo_id: int = Path(gt=0)):
@@ -71,7 +62,7 @@ async def update_todo(db:db_dependency,
 
     
      
-@app.delete("/todo/{todo_id}", status_code=204)
+@router.delete("/todo/{todo_id}", status_code=204)
 async def delete_todo(db:db_dependency, todo_id: int = Path(gt=0)):
         todo_model = db.query(Todos).filter(Todos.id == todo_id ).first()
         if todo_model is None:
