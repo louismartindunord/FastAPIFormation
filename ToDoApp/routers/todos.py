@@ -1,7 +1,7 @@
 from typing import Annotated
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, FastAPI, Depends, HTTPException, Path, dependencies
-import models
+from models import Todos
 from database import engine, SessionLocal
 from pydantic import BaseModel, Field
 from .auth import get_current_user
